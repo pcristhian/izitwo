@@ -17,15 +17,17 @@ export default function RegistrarVenta({ sucursal }) {
     const [modalAbierto, setModalAbierto] = useState(false);
 
     // NUEVOS STATES
-    const [descuento, setDescuento] = useState(0);
+    const [descuento, setDescuento] = useState("");
     const [descDescuento, setDescDescuento] = useState("");
     const [mostrarDescuento, setMostrarDescuento] = useState(false);
+    const [vendedorSeleccionado, setVendedorSeleccionado] = useState(null);
 
-    // Mostrar todas las ventas del día al inicio si no hay categoría seleccionada
+    // Mostrar todas las ventas del día al inicio
     useEffect(() => {
         if (sucursal) {
             setCategoriaSeleccionada(null);
-            cargarVentas(null, true);
+            setVendedorSeleccionado(null);
+            cargarVentas(null, true, null);
         }
     }, [sucursal]);
 
@@ -35,26 +37,21 @@ export default function RegistrarVenta({ sucursal }) {
             const { data: cats } = await supabase
                 .from("categorias")
                 .select("*")
-                .in("nombre", [
-                    "Celulares",
-                    "Accesorios",
-                    "Imedic",
-                    "Productos Naturales",
-                    "Suplementos",
-                    "Pañuelitos",
-                ])
                 .order("id", { ascending: true });
 
-            const { data: vends } = await supabase.from("vendedores").select("*");
+            const { data: vends } = await supabase
+                .from("vendedores")
+                .select("*")
+                .eq("sucursal_id", sucursal.id);
 
             setCategorias(cats || []);
             setVendedores(vends || []);
         };
         fetchData();
-    }, []);
+    }, [sucursal]);
 
-    // Cargar ventas del día o por categoría
-    const cargarVentas = async (categoria, todas = false) => {
+    // Cargar ventas
+    const cargarVentas = async (categoria = null, todas = false, vendedor = null) => {
         if (!sucursal) return;
 
         const inicioDia = new Date();
@@ -65,33 +62,49 @@ export default function RegistrarVenta({ sucursal }) {
         const { data, error } = await supabase
             .from("ventas")
             .select(`
-                id,
-                cantidad,
-                precio_unitario,
-                descuento,
-                desc_descuento,
-                fecha,
-                producto:producto_id(id,codigo,nombre,categoria_id),
-                vendedor:vendedor_id(nombre,caja),
-                sucursal_id
-            `)
+          id,
+          cantidad,
+          precio_unitario,
+          descuento,
+          desc_descuento,
+          fecha,
+          producto:producto_id(id,codigo,nombre,categoria_id),
+          vendedor:vendedor_id(id,nombre,caja),
+          sucursal_id,
+          total
+      `)
             .gte("fecha", inicioDia.toISOString())
             .lte("fecha", finDia.toISOString())
-            .eq("sucursal_id", sucursal.id);
+            .eq("sucursal_id", sucursal.id)
+            .order("fecha", { ascending: true });
 
         if (!error && data) {
-            const ventasFiltradas = todas
-                ? data
-                : data.filter(
-                    (venta) => Number(venta.producto?.categoria_id) === Number(categoria?.id)
+            let ventasFiltradas = data;
+
+            if (!todas && categoria) {
+                ventasFiltradas = ventasFiltradas.filter(
+                    (venta) => Number(venta.producto?.categoria_id) === Number(categoria.id)
                 );
+            }
+
+            if (vendedor) {
+                ventasFiltradas = ventasFiltradas.filter(
+                    (venta) => Number(venta.vendedor?.id) === Number(vendedor.id)
+                );
+            }
+
             setVentas(ventasFiltradas);
         }
     };
 
     const seleccionarCategoria = (cat) => {
         setCategoriaSeleccionada(cat);
-        cargarVentas(cat);
+        cargarVentas(cat, cat === null, vendedorSeleccionado);
+    };
+
+    const seleccionarVendedor = (vend) => {
+        setVendedorSeleccionado(vend);
+        cargarVentas(categoriaSeleccionada, categoriaSeleccionada === null, vend);
     };
 
     // Buscar producto automáticamente
@@ -144,6 +157,9 @@ export default function RegistrarVenta({ sucursal }) {
             return;
         }
 
+        const subtotal = producto.precio * cantidad;
+        const total = Math.max(0, subtotal - (descuento || 0));
+
         const { error } = await supabase.from("ventas").insert([
             {
                 producto_id: producto.id,
@@ -151,14 +167,14 @@ export default function RegistrarVenta({ sucursal }) {
                 sucursal_id: sucursal.id,
                 cantidad,
                 precio_unitario: producto.precio,
-                descuento,
-                desc_descuento: descDescuento,
+                total,
+                descuento: descuento || 0,
+                desc_descuento,
                 fecha: fecha || new Date().toISOString(),
             },
         ]);
 
         if (!error) {
-            // Actualizar inventario
             await supabase
                 .from("inventarios")
                 .update({ stock_actual: producto.stockActual - cantidad })
@@ -166,16 +182,11 @@ export default function RegistrarVenta({ sucursal }) {
                 .eq("sucursal_id", sucursal.id);
 
             setMensaje("✅ Venta registrada con éxito");
-            setCodigo("");
-            setProducto(null);
-            setCantidad(1);
-            setVendedorId("");
-            setFecha("");
-            setDescuento(0);
-            setDescDescuento("");
-            setMostrarDescuento(false);
+
+            // Limpiar modal después de guardar
+            abrirModal();
             setModalAbierto(false);
-            cargarVentas(categoriaSeleccionada);
+            cargarVentas(categoriaSeleccionada, categoriaSeleccionada === null, vendedorSeleccionado);
         } else {
             console.error(error);
             setMensaje("❌ Error al registrar la venta");
@@ -183,22 +194,35 @@ export default function RegistrarVenta({ sucursal }) {
     };
 
     const subtotal = producto ? producto.precio * cantidad : 0;
-    const total = Math.max(0, subtotal - descuento);
+    const total = Math.max(0, subtotal - (descuento || 0));
+
+    const abrirModal = () => {
+        setCodigo("");
+        setProducto(null);
+        setCantidad(1);
+        setVendedorId("");
+        setFecha(
+            new Date().toLocaleString("sv-SE", { timeZone: "America/La_Paz" }).slice(0, 16)
+        ); // Formato YYYY-MM-DDTHH:mm
+        setDescuento("");
+        setDescDescuento("");
+        setMostrarDescuento(false);
+        setMensaje("");
+        setModalAbierto(true);
+    };
 
     return (
-        <div className="p-4">
+        <div className="p-2">
             {/* Selector de categoría */}
-            <div className="flex flex-wrap gap-2 justify-center mb-6">
-                {/* Botón TODO */}
+            <div className="text-xl font-bold mb-1 sticky top-0 bg-white z-50 px-2 p-1">
+                <h3>
+                    Registro de Ventas
+                </h3>
+            </div>
+            <div className="flex flex-wrap gap-2 justify-center mb-1 sticky top-0 bg-white z-50 p-2">
                 <button
-                    onClick={() => {
-                        setCategoriaSeleccionada(null);
-                        cargarVentas(null, true);
-                    }}
-                    className={`px-4 py-2 rounded-lg ${categoriaSeleccionada === null
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-200 hover:bg-gray-300"
-                        }`}
+                    onClick={() => seleccionarCategoria(null)}
+                    className={`px-4 py-2 rounded-lg ${categoriaSeleccionada === null ? "bg-blue-600 text-white" : "bg-gray-200 hover:bg-gray-300"}`}
                 >
                     TODO
                 </button>
@@ -207,27 +231,46 @@ export default function RegistrarVenta({ sucursal }) {
                     <button
                         key={cat.id}
                         onClick={() => seleccionarCategoria(cat)}
-                        className={`px-4 py-2 rounded-lg ${categoriaSeleccionada?.id === cat.id
-                            ? "bg-blue-600 text-white"
-                            : "bg-gray-200 hover:bg-gray-300"
-                            }`}
+                        className={`px-4 py-2 rounded-lg ${categoriaSeleccionada?.id === cat.id ? "bg-blue-600 text-white" : "bg-gray-200 hover:bg-gray-300"}`}
                     >
                         {cat.nombre.toUpperCase()}
                     </button>
                 ))}
             </div>
+
+            {/* Filtro por vendedores */}
+            <div className="flex flex-wrap gap-2 justify-center mb-2 sticky top-[50px] bg-white z-40 p-2">
+                <button
+                    onClick={() => seleccionarVendedor(null)}
+                    className={`px-4 py-2 rounded-lg ${vendedorSeleccionado === null ? "bg-blue-600 text-white" : "bg-gray-200 hover:bg-gray-300"}`}
+                >
+                    TODO
+                </button>
+
+                {vendedores.map((v) => (
+                    <button
+                        key={v.id}
+                        onClick={() => seleccionarVendedor(v)}
+                        className={`px-4 py-2 rounded-lg ${vendedorSeleccionado?.id === v.id ? "bg-blue-600 text-white" : "bg-gray-200 hover:bg-gray-300"}`}
+                    >
+                        {v.caja.toUpperCase()}
+                    </button>
+                ))}
+            </div>
+
+
+
             {/* Vista de ventas */}
             <div className="max-w-2xl mx-auto relative">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-bold">
                         {categoriaSeleccionada
-                            ? `Ventas de ${categoriaSeleccionada.nombre} en ${sucursal?.nombre} (Mes actual)`
+                            ? `Ventas de ${categoriaSeleccionada.nombre} en ${sucursal?.nombre} (Hoy)`
                             : `Ventas de todas las categorías en ${sucursal?.nombre} (Hoy)`}
                     </h2>
 
-                    {/* Botón de nueva venta */}
                     <button
-                        onClick={() => setModalAbierto(true)}
+                        onClick={abrirModal}
                         className="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700 transition"
                     >
                         Nueva venta
@@ -242,23 +285,26 @@ export default function RegistrarVenta({ sucursal }) {
                             <li key={venta.id} className="border p-3 rounded mb-2 flex justify-between">
                                 <div>
                                     <p>
-                                        <strong>Código:</strong> {venta.producto?.codigo} — <strong>Producto:</strong> {venta.producto?.nombre}
+                                        <strong>Código:</strong> {venta.producto?.codigo} — <strong>Vendedor:</strong> {venta.vendedor?.nombre} ({venta.vendedor?.caja})
                                     </p>
                                     <p>
-                                        <strong>Cantidad:</strong> {venta.cantidad} — <strong>Total:</strong> ${(venta.cantidad * venta.precio_unitario - (venta.descuento || 0)).toFixed(2)}
+                                        <strong>Cantidad:</strong> {venta.cantidad} — <strong>Total:</strong> Bs. {(venta.total ?? (venta.cantidad * venta.precio_unitario - (venta.descuento || 0))).toFixed(2)}
                                     </p>
                                     {venta.descuento > 0 && (
-                                        <p className="text-red-600 text-sm">Descuento: -${venta.descuento} ({venta.desc_descuento})</p>
+                                        <p className="text-red-600 text-sm">Descuento: -Bs. {venta.descuento} ({venta.desc_descuento})</p>
                                     )}
-                                    <p><strong>Vendedor:</strong> {venta.vendedor?.nombre} ({venta.vendedor?.caja})</p>
+                                    <p>
+                                        <strong>Producto:</strong> {venta.producto?.nombre}
+                                    </p>
                                 </div>
-                                <div className="text-sm text-gray-600">{new Date(venta.fecha).toLocaleDateString()}</div>
+                                <div className="text-sm text-gray-600">
+                                    {new Date(venta.fecha).toLocaleString("es-ES", { timeZone: "America/La_Paz", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                                </div>
                             </li>
                         ))}
                     </ul>
                 )}
             </div>
-
 
             {/* Modal de venta */}
             {modalAbierto && (
@@ -305,7 +351,7 @@ export default function RegistrarVenta({ sucursal }) {
                                 </select>
 
                                 <div className="mt-4">
-                                    <label className="block mb-1">Fecha de venta (opcional)</label>
+                                    <label className="block mb-1">Fecha de venta</label>
                                     <input
                                         type="datetime-local"
                                         value={fecha}
@@ -365,9 +411,10 @@ export default function RegistrarVenta({ sucursal }) {
                                             <input
                                                 type="number"
                                                 value={descuento}
-                                                onChange={(e) => setDescuento(Number(e.target.value))}
+                                                onChange={(e) => setDescuento(e.target.value === "" ? "" : Number(e.target.value))}
                                                 className="border rounded p-2 w-full"
                                                 min="0"
+                                                placeholder="0"
                                             />
                                         </div>
                                         <div>

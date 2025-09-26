@@ -11,14 +11,12 @@ export default function DashboardContent() {
     const [sucursales, setSucursales] = useState([]);
     const [sucursalSeleccionada, setSucursalSeleccionada] = useState(null);
 
-    // Cargar sucursales
     useEffect(() => {
         const fetchSucursales = async () => {
             const { data, error } = await supabase.from("sucursales").select("*");
             if (!error && data && data.length > 0) {
                 setSucursales(data);
 
-                // Revisar si hay sucursal guardada en localStorage
                 const guardada = localStorage.getItem("sucursalSeleccionada");
                 if (guardada) {
                     const suc = data.find((s) => s.id === Number(guardada));
@@ -28,7 +26,6 @@ export default function DashboardContent() {
                     }
                 }
 
-                // Por defecto, seleccionar la primera sucursal
                 setSucursalSeleccionada(data[0]);
                 localStorage.setItem("sucursalSeleccionada", data[0].id);
             }
@@ -36,7 +33,6 @@ export default function DashboardContent() {
         fetchSucursales();
     }, []);
 
-    // Cambiar sucursal y guardar en localStorage
     const cambiarSucursal = (suc) => {
         setSucursalSeleccionada(suc);
         localStorage.setItem("sucursalSeleccionada", suc.id);
@@ -48,36 +44,18 @@ export default function DashboardContent() {
                 return <Resumen sucursal={sucursalSeleccionada} />;
 
             case "ventas":
-                // Pasar sucursalSeleccionada al componente Ventas
                 return (
-                    <div>
-                        <h2 className="text-2xl font-bold mb-4">Ventas</h2>
-                        {sucursalSeleccionada ? (
-                            <Ventas sucursal={sucursalSeleccionada} />
-                        ) : (
-                            <p>Cargando sucursal...</p>
-                        )}
-                    </div>
+                    <Ventas sucursal={sucursalSeleccionada} />
                 );
 
             case "vendedores":
                 return (
-                    <div>
-                        <h2 className="text-2xl font-bold mb-4">Cajas</h2>
-                        {sucursalSeleccionada ? (
-                            <Vendedores sucursal={sucursalSeleccionada} />
-                        ) : (
-                            <p>Cargando sucursal...</p>
-                        )}
-                    </div>
+                    <Vendedores sucursal={sucursalSeleccionada} />
                 );
 
             case "reportes":
                 return (
-                    <div>
-                        <h2 className="text-2xl font-bold mb-4">Reportes</h2>
-                        <p>Aquí se mostrarán los reportes.</p>
-                    </div>
+                    <p>Aquí se mostrarán los reportes.</p>
                 );
 
             default:
@@ -91,12 +69,11 @@ export default function DashboardContent() {
     };
 
     return (
-        <div className="min-h-screen flex bg-gray-100">
-            {/* Sidebar */}
+        <div className="h-screen flex bg-gray-100">
+            {/* Sidebar fijo */}
             <aside className="w-64 bg-sky-100 shadow-md p-6 flex flex-col">
                 <h1 className="text-2xl font-bold mb-2">MultiCentro</h1>
 
-                {/* Selector de sucursal */}
                 {sucursales.length > 0 && (
                     <select
                         value={sucursalSeleccionada?.id || ""}
@@ -114,7 +91,6 @@ export default function DashboardContent() {
                     </select>
                 )}
 
-                {/* Menú lateral */}
                 <nav className="flex flex-col space-y-3">
                     <button
                         onClick={() => setActivePage("home")}
@@ -135,18 +111,6 @@ export default function DashboardContent() {
                         Cajas
                     </button>
                     <button
-                        onClick={() => setActivePage("suministros")}
-                        className={`text-left px-3 py-2 rounded ${activePage === "suministros" ? "bg-blue-500 text-white" : "hover:bg-gray-200"}`}
-                    >
-                        Suministros
-                    </button>
-                    <button
-                        onClick={() => setActivePage("inventario")}
-                        className={`text-left px-3 py-2 rounded ${activePage === "inventario" ? "bg-blue-500 text-white" : "hover:bg-gray-200"}`}
-                    >
-                        Inventario
-                    </button>
-                    <button
                         onClick={() => setActivePage("reportes")}
                         className={`text-left px-3 py-2 rounded ${activePage === "reportes" ? "bg-blue-500 text-white" : "hover:bg-gray-200"}`}
                     >
@@ -161,8 +125,12 @@ export default function DashboardContent() {
                 </nav>
             </aside>
 
-            {/* Contenido dinámico */}
-            <main className="flex-1 p-6">{renderContent()}</main>
+            {/* Contenido fijo, con scroll solo dentro */}
+            <main className="flex-1 flex flex-col overflow-hidden">
+                <div className="flex-1 overflow-auto p-6">
+                    {renderContent()}
+                </div>
+            </main>
         </div>
     );
 }
