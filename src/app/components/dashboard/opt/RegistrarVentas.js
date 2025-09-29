@@ -76,7 +76,7 @@ export default function RegistrarVenta({ sucursal }) {
             .gte("fecha", inicioDia.toISOString())
             .lte("fecha", finDia.toISOString())
             .eq("sucursal_id", sucursal.id)
-            .order("fecha", { ascending: true });
+            .order("fecha", { ascending: false });
 
         if (!error && data) {
             let ventasFiltradas = data;

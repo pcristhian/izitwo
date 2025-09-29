@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import Resumen from "./opt/resumen";
 import Ventas from "./opt/RegistrarVentas";
 import Vendedores from "./opt/vendedores";
+import Inventarios from "./opt/Inventarios";
+
 import { supabase } from "../../lib/supabase";
 
 export default function DashboardContent() {
@@ -45,8 +47,20 @@ export default function DashboardContent() {
 
             case "ventas":
                 return (
-                    <Ventas sucursal={sucursalSeleccionada} />
+                    <Ventas
+                        sucursal={sucursalSeleccionada}
+                        sucursales={sucursales}
+                    />
                 );
+            case "inventarios":
+                return (
+                    <Inventarios
+                        sucursal={sucursalSeleccionada}
+                        sucursales={sucursales}
+                    />
+                );
+
+
 
             case "vendedores":
                 return (
@@ -105,17 +119,19 @@ export default function DashboardContent() {
                         Ventas
                     </button>
                     <button
+                        onClick={() => setActivePage("inventarios")}
+                        className={`text-left px-3 py-2 rounded ${activePage === "inventarios" ? "bg-blue-500 text-white" : "hover:bg-gray-200"}`}
+                    >
+                        Inventarios
+                    </button>
+
+                    <button
                         onClick={() => setActivePage("vendedores")}
                         className={`text-left px-3 py-2 rounded ${activePage === "vendedores" ? "bg-blue-500 text-white" : "hover:bg-gray-200"}`}
                     >
                         Cajas
                     </button>
-                    <button
-                        onClick={() => setActivePage("reportes")}
-                        className={`text-left px-3 py-2 rounded ${activePage === "reportes" ? "bg-blue-500 text-white" : "hover:bg-gray-200"}`}
-                    >
-                        Reportes
-                    </button>
+
                     <button
                         onClick={handleLogout}
                         className="mt-auto px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600"
