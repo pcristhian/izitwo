@@ -5,6 +5,7 @@ import Resumen from "./opt/resumen";
 import Ventas from "./opt/RegistrarVentas";
 import Vendedores from "./opt/vendedores";
 import Inventarios from "./opt/Inventarios";
+import ReporteVentas from "./opt/ReporteVentas";
 
 import { supabase } from "../../lib/supabase";
 
@@ -69,7 +70,7 @@ export default function DashboardContent() {
 
             case "reportes":
                 return (
-                    <p>Aquí se mostrarán los reportes.</p>
+                    <ReporteVentas sucursal={sucursalSeleccionada} />
                 );
 
             default:
@@ -123,6 +124,12 @@ export default function DashboardContent() {
                         className={`text-left px-3 py-2 rounded ${activePage === "inventarios" ? "bg-blue-500 text-white" : "hover:bg-gray-200"}`}
                     >
                         Inventarios
+                    </button>
+                    <button
+                        onClick={() => setActivePage("reportes")}
+                        className={`text-left px-3 py-2 rounded ${activePage === "reportes" ? "bg-blue-500 text-white" : "hover:bg-gray-200"}`}
+                    >
+                        Reportes
                     </button>
 
                     <button

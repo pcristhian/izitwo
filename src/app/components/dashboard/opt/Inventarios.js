@@ -16,8 +16,8 @@ export default function Inventarios({ sucursal, sucursales = [] }) {
     const [modalEditar, setModalEditar] = useState(false);
 
     // Ingreso múltiple
-    const [busqueda, setBusqueda] = useState(""); // para modalIngreso
-    const [productosCantidad, setProductosCantidad] = useState({}); // { [productoId]: cantidad }
+    const [busqueda, setBusqueda] = useState("");
+    const [productosCantidad, setProductosCantidad] = useState({});
 
     // Nuevo producto
     const [codigo, setCodigo] = useState("");
@@ -52,7 +52,7 @@ export default function Inventarios({ sucursal, sucursales = [] }) {
         const { data, error } = await supabase
             .from("inventarios")
             .select(
-                "id, stock_actual, stock_minimo, productos(id, codigo, nombre, precio, categoria_id, categorias(nombre))"
+                "id, stock_actual, stock_minimo, productos(id, codigo, nombre, descripcion, precio, costo, categoria_id, categorias(nombre))"
             )
             .eq("sucursal_id", sucursal.id);
 
@@ -243,7 +243,6 @@ export default function Inventarios({ sucursal, sucursales = [] }) {
         setSucursalDestino("");
     };
 
-
     return (
         <div className="p-4">
             {/* Botones principales */}
@@ -275,7 +274,6 @@ export default function Inventarios({ sucursal, sucursales = [] }) {
                     {productos
                         .filter(p => !categoriaFiltro || p.productos.categoria_id === parseInt(categoriaFiltro))
                         .map(p => (
-
                             <tr key={p.id} className="border-t">
                                 <td className="p-2 w-1/9">{p.productos.codigo}</td>
                                 <td className="p-2 w-3/8">{p.productos.nombre}</td>
@@ -295,7 +293,6 @@ export default function Inventarios({ sucursal, sucursales = [] }) {
                                         <span className="ml-2">⚠️</span>
                                     )}
                                 </td>
-
                             </tr>
                         ))}
                 </tbody>
@@ -905,8 +902,7 @@ export default function Inventarios({ sucursal, sucursales = [] }) {
                     </div>
                 </div>
             )
-            }
-
-        </div >
+            } </div>
     );
 }
+
