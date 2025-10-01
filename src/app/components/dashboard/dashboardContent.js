@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Resumen from "./opt/resumen";
+import Resumen from "./opt/Resumen";
 import Ventas from "./opt/RegistrarVentas";
-import Vendedores from "./opt/vendedores";
+import Vendedores from "./opt/Vendedores";
 import Inventarios from "./opt/Inventarios";
-import ReporteVentas from "./opt/ReporteVentas";
+
+
+import ReporteInventario from "./opt/ReporteInventario";
 
 import { supabase } from "../../lib/supabase";
 
@@ -63,14 +65,14 @@ export default function DashboardContent() {
 
 
 
-            case "vendedores":
+            case "ReporteInventario":
                 return (
-                    <Vendedores sucursal={sucursalSeleccionada} />
+                    <ReporteInventario sucursal={sucursalSeleccionada} />
                 );
 
-            case "reportes":
+            case "Vendedores":
                 return (
-                    <ReporteVentas sucursal={sucursalSeleccionada} />
+                    <Vendedores sucursal={sucursalSeleccionada} />
                 );
 
             default:
@@ -126,15 +128,15 @@ export default function DashboardContent() {
                         Inventarios
                     </button>
                     <button
-                        onClick={() => setActivePage("reportes")}
+                        onClick={() => setActivePage("ReporteInventario")}
                         className={`text-left px-3 py-2 rounded ${activePage === "reportes" ? "bg-blue-500 text-white" : "hover:bg-gray-200"}`}
                     >
                         Reportes
                     </button>
 
                     <button
-                        onClick={() => setActivePage("vendedores")}
-                        className={`text-left px-3 py-2 rounded ${activePage === "vendedores" ? "bg-blue-500 text-white" : "hover:bg-gray-200"}`}
+                        onClick={() => setActivePage("Vendedores")}
+                        className={`text-left px-3 py-2 rounded ${activePage === "Vendedores" ? "bg-blue-500 text-white" : "hover:bg-gray-200"}`}
                     >
                         Cajas
                     </button>

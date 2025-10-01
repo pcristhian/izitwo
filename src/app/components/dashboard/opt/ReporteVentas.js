@@ -2,452 +2,270 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "../../../lib/supabase";
+import * as XLSX from "xlsx";
+import { motion } from "framer-motion";
+import { ChevronDown, ChevronUp, XCircle } from "lucide-react";
 
-export default function RegistrarVenta({ sucursal }) {
-    const [categorias, setCategorias] = useState([]);
-    const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
+export default function ReporteVentas({ sucursal }) {
     const [ventas, setVentas] = useState([]);
-    const [vendedores, setVendedores] = useState([]);
-    const [producto, setProducto] = useState(null);
-    const [codigo, setCodigo] = useState("");
-    const [cantidad, setCantidad] = useState(1);
-    const [fecha, setFecha] = useState("");
-    const [vendedorId, setVendedorId] = useState("");
-    const [mensaje, setMensaje] = useState("");
-    const [modalAbierto, setModalAbierto] = useState(false);
+    const [categorias, setCategorias] = useState([]);
+    const [categoriaFiltro, setCategoriaFiltro] = useState("");
+    const [fechaInicio, setFechaInicio] = useState("");
+    const [fechaFin, setFechaFin] = useState("");
+    const [showExportOptions, setShowExportOptions] = useState(false);
 
-    // NUEVOS STATES
-    const [descuento, setDescuento] = useState("");
-    const [descDescuento, setDescDescuento] = useState("");
-    const [mostrarDescuento, setMostrarDescuento] = useState(false);
-    const [vendedorSeleccionado, setVendedorSeleccionado] = useState(null);
+    // Paginación
+    const [currentPage, setCurrentPage] = useState(1);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
 
-    // Mostrar todas las ventas del día al inicio
     useEffect(() => {
-        if (sucursal) {
-            setCategoriaSeleccionada(null);
-            setVendedorSeleccionado(null);
-            cargarVentas(null, true, null);
+        const hoy = new Date();
+        const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1)
+            .toISOString()
+            .split("T")[0];
+        const finMes = hoy.toISOString().split("T")[0];
+
+        setFechaInicio(inicioMes);
+        setFechaFin(finMes);
+    }, []);
+
+    useEffect(() => {
+        if (sucursal && fechaInicio && fechaFin) {
+            fetchCategorias();
+            fetchVentas();
         }
-    }, [sucursal]);
+    }, [sucursal, categoriaFiltro, fechaInicio, fechaFin]);
 
-    // Cargar categorías y vendedores
-    useEffect(() => {
-        const fetchData = async () => {
-            const { data: cats } = await supabase
-                .from("categorias")
-                .select("*")
-                .order("id", { ascending: true });
+    const fetchCategorias = async () => {
+        const { data, error } = await supabase.from("categorias").select("*");
+        if (!error && data) setCategorias(data);
+    };
 
-            const { data: vends } = await supabase
-                .from("vendedores")
-                .select("*")
-                .eq("sucursal_id", sucursal.id);
+    const fetchVentas = async () => {
+        let query = supabase
+            .from("ventas")
+            .select(
+                `producto_id, cantidad, precio_unitario, total, fecha, 
+         productos(codigo, nombre, categoria_id, categorias(nombre)), 
+         sucursal_id`
+            )
+            .eq("sucursal_id", sucursal.id)
+            .gte("fecha", fechaInicio)
+            .lte("fecha", fechaFin);
 
-            setCategorias(cats || []);
-            setVendedores(vends || []);
-        };
-        fetchData();
-    }, [sucursal]);
+        if (categoriaFiltro) query = query.eq("productos.categoria_id", parseInt(categoriaFiltro));
 
-    // Cargar ventas
-    const cargarVentas = async (categoria = null, todas = false, vendedor = null) => {
-        if (!sucursal) return;
+        const { data, error } = await query;
+        if (!error && data) setVentas(data);
+    };
 
-        const inicioDia = new Date();
-        inicioDia.setHours(0, 0, 0, 0);
-        const finDia = new Date();
-        finDia.setHours(23, 59, 59, 999);
+    const resetFiltros = () => {
+        const hoy = new Date();
+        const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1)
+            .toISOString()
+            .split("T")[0];
+        const finMes = hoy.toISOString().split("T")[0];
 
+        setCategoriaFiltro("");
+        setFechaInicio(inicioMes);
+        setFechaFin(finMes);
+    };
+
+    // Exportar tabla actual
+    const handleExportTablaActual = () => {
+        const data = ventas.map(v => ({
+            codigo: v.productos?.codigo || "",
+            nombre: v.productos?.nombre || "",
+            categoria: v.productos?.categorias?.nombre || "",
+            cantidad: v.cantidad,
+            precio_unitario: v.precio_unitario,
+            total: v.total,
+            fecha: v.fecha,
+            sucursal: sucursal.nombre
+        }));
+        XLSX.writeFile(XLSX.utils.book_new(), `ventas_tabla_actual_${sucursal.nombre}.xlsx`);
+        exportToExcel(data, `ventas_tabla_actual_${sucursal.nombre}.xlsx`);
+    };
+
+    // Exportar todas las ventas (año actual)
+    const handleExportTodasVentas = async () => {
+        const hoy = new Date();
+        const inicioAno = `${hoy.getFullYear()}-01-01`;
         const { data, error } = await supabase
             .from("ventas")
-            .select(`
-                id,
-                cantidad,
-                precio_unitario,
-                descuento,
-                desc_descuento,
-                fecha,
-                producto:producto_id(id,codigo,nombre,categoria_id),
-                vendedor:vendedor_id(id,nombre,caja),
-                sucursal_id,
-                total
-            `)
-            .gte("fecha", inicioDia.toISOString())
-            .lte("fecha", finDia.toISOString())
+            .select(
+                `producto_id, cantidad, precio_unitario, total, fecha, 
+         productos(codigo, nombre, categoria_id, categorias(nombre)), 
+         sucursal_id`
+            )
             .eq("sucursal_id", sucursal.id)
-            .order("fecha", { ascending: false });
+            .gte("fecha", inicioAno);
 
-        if (!error && data) {
-            let ventasFiltradas = data;
+        if (error || !data) return;
 
-            if (!todas && categoria) {
-                ventasFiltradas = ventasFiltradas.filter(
-                    (venta) => Number(venta.producto?.categoria_id) === Number(categoria.id)
-                );
-            }
-
-            if (vendedor) {
-                ventasFiltradas = ventasFiltradas.filter(
-                    (venta) => Number(venta.vendedor?.id) === Number(vendedor.id)
-                );
-            }
-
-            setVentas(ventasFiltradas);
-        }
+        const workbook = XLSX.utils.book_new();
+        const rows = data.map(v => ({
+            codigo: v.productos?.codigo || "",
+            nombre: v.productos?.nombre || "",
+            categoria: v.productos?.categorias?.nombre || "",
+            cantidad: v.cantidad,
+            precio_unitario: v.precio_unitario,
+            total: v.total,
+            fecha: v.fecha,
+            sucursal: sucursal.nombre
+        }));
+        const ws = XLSX.utils.json_to_sheet(rows);
+        XLSX.utils.book_append_sheet(workbook, ws, `Ventas_${hoy.getFullYear()}`);
+        XLSX.writeFile(workbook, `ventas_${hoy.getFullYear()}_${sucursal.nombre}.xlsx`);
     };
 
-    const seleccionarCategoria = (cat) => {
-        setCategoriaSeleccionada(cat);
-        cargarVentas(cat, cat === null, vendedorSeleccionado);
-    };
-
-    const seleccionarVendedor = (vend) => {
-        setVendedorSeleccionado(vend);
-        cargarVentas(categoriaSeleccionada, categoriaSeleccionada === null, vend);
-    };
-
-    // Buscar producto automáticamente
-    useEffect(() => {
-        const buscarProducto = async () => {
-            if (!categoriaSeleccionada || !sucursal || codigo.trim() === "") {
-                setProducto(null);
-                return;
-            }
-
-            const { data: inventarios, error } = await supabase
-                .from("inventarios")
-                .select(`stock_actual, producto:producto_id(*)`)
-                .eq("sucursal_id", sucursal.id);
-
-            if (error || !inventarios) {
-                setProducto(null);
-                setMensaje("❌ Error al buscar producto");
-                return;
-            }
-
-            const prodEncontrado = inventarios.find(
-                (inv) =>
-                    inv.producto?.codigo?.trim().toUpperCase() === codigo.trim().toUpperCase() &&
-                    Number(inv.producto?.categoria_id) === Number(categoriaSeleccionada.id)
-            );
-
-            if (!prodEncontrado) {
-                setProducto(null);
-                setMensaje("❌ Producto no encontrado en esta sucursal/categoría");
-            } else {
-                setProducto({ ...prodEncontrado.producto, stockActual: prodEncontrado.stock_actual });
-                setMensaje("");
-                setCantidad(1);
-            }
-        };
-
-        buscarProducto();
-    }, [codigo, categoriaSeleccionada, sucursal]);
-
-    // Registrar venta
-    const registrarVenta = async () => {
-        if (!producto || !vendedorId || !sucursal || cantidad <= 0) {
-            setMensaje("⚠️ Completa todos los campos");
-            return;
-        }
-
-        if (cantidad > producto.stockActual) {
-            setMensaje(`❌ Stock insuficiente. Disponible: ${producto.stockActual}`);
-            return;
-        }
-
-        const subtotal = producto.precio * cantidad;
-        const total = Math.max(0, subtotal - (descuento || 0));
-
-        const { error } = await supabase.from("ventas").insert([
-            {
-                producto_id: producto.id,
-                vendedor_id: vendedorId,
-                sucursal_id: sucursal.id,
-                cantidad,
-                precio_unitario: producto.precio,
-                total,
-                descuento: descuento || 0,
-                desc_descuento,
-                fecha: fecha || new Date().toISOString(),
-            },
-        ]);
-
-        if (!error) {
-            await supabase
-                .from("inventarios")
-                .update({ stock_actual: producto.stockActual - cantidad })
-                .eq("producto_id", producto.id)
-                .eq("sucursal_id", sucursal.id);
-
-            setMensaje("✅ Venta registrada con éxito");
-
-            // Limpiar modal después de guardar
-            abrirModal();
-            setModalAbierto(false);
-            cargarVentas(categoriaSeleccionada, categoriaSeleccionada === null, vendedorSeleccionado);
-        } else {
-            console.error(error);
-            setMensaje("❌ Error al registrar la venta");
-        }
-    };
-
-    const subtotal = producto ? producto.precio * cantidad : 0;
-    const total = Math.max(0, subtotal - (descuento || 0));
-
-    const abrirModal = () => {
-        setCodigo("");
-        setProducto(null);
-        setCantidad(1);
-        setVendedorId("");
-        setFecha(
-            new Date().toLocaleString("sv-SE", { timeZone: "America/La_Paz" }).slice(0, 16)
-        ); // Formato YYYY-MM-DDTHH:mm
-        setDescuento("");
-        setDescDescuento("");
-        setMostrarDescuento(false);
-        setMensaje("");
-        setModalAbierto(true);
-    };
+    // Paginación
+    const indexOfLastRow = currentPage * rowsPerPage;
+    const indexOfFirstRow = indexOfLastRow - rowsPerPage;
+    const currentRows = ventas.slice(indexOfFirstRow, indexOfLastRow);
+    const totalPages = Math.ceil(ventas.length / rowsPerPage);
 
     return (
-        <div className="p-2">
-            {/* Selector de categoría */}
-            <div className="text-xl font-bold mb-1 sticky top-0 bg-white z-50 px-2 p-1">
-                <h3>Registro de Ventas</h3>
-            </div>
-            <div className="flex flex-wrap gap-2 justify-center mb-1 sticky top-0 bg-white z-50 p-2">
-                <button
-                    onClick={() => seleccionarCategoria(null)}
-                    className={`px-4 py-2 rounded-lg ${categoriaSeleccionada === null ? "bg-blue-600 text-white" : "bg-gray-200 hover:bg-gray-300"}`}
-                >
-                    TODO
-                </button>
+        <div className="p-4">
+            <motion.h2
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                className="text-xl font-bold mb-4 text-indigo-700"
+            >
+                Reporte de Ventas - {sucursal.nombre}
+            </motion.h2>
 
-                {categorias.map((cat) => (
-                    <button
-                        key={cat.id}
-                        onClick={() => seleccionarCategoria(cat)}
-                        className={`px-4 py-2 rounded-lg ${categoriaSeleccionada?.id === cat.id ? "bg-blue-600 text-white" : "bg-gray-200 hover:bg-gray-300"}`}
-                    >
-                        {cat.nombre.toUpperCase()}
-                    </button>
-                ))}
-            </div>
-
-            {/* Filtro por vendedores */}
-            <div className="flex flex-wrap gap-2 justify-center mb-2 sticky top-[50px] bg-white z-40 p-2">
-                <button
-                    onClick={() => seleccionarVendedor(null)}
-                    className={`px-4 py-2 rounded-lg ${vendedorSeleccionado === null ? "bg-blue-600 text-white" : "bg-gray-200 hover:bg-gray-300"}`}
-                >
-                    TODO
-                </button>
-
-                {vendedores.map((v) => (
-                    <button
-                        key={v.id}
-                        onClick={() => seleccionarVendedor(v)}
-                        className={`px-4 py-2 rounded-lg ${vendedorSeleccionado?.id === v.id ? "bg-blue-600 text-white" : "bg-gray-200 hover:bg-gray-300"}`}
-                    >
-                        {v.caja.toUpperCase()}
-                    </button>
-                ))}
-            </div>
-
-            {/* Vista de ventas */}
-            <div className="max-w-2xl mx-auto relative">
-                <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-bold">
-                        {categoriaSeleccionada
-                            ? `Ventas de ${categoriaSeleccionada.nombre} en ${sucursal?.nombre} (Hoy)`
-                            : `Ventas de todas las categorías en ${sucursal?.nombre} (Hoy)`}
-                    </h2>
-
-                    <button
-                        onClick={abrirModal}
-                        className="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700 transition"
-                    >
-                        Nueva venta
-                    </button>
+            {/* Filtros */}
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5 }}
+                className="flex gap-4 flex-wrap mb-6 items-end"
+            >
+                <div>
+                    <label className="block text-sm font-medium text-gray-700">Fecha inicio</label>
+                    <input
+                        type="date"
+                        value={fechaInicio}
+                        onChange={e => setFechaInicio(e.target.value)}
+                        className="border p-2 rounded shadow-sm"
+                    />
                 </div>
-
-                {ventas.length === 0 ? (
-                    <p className="text-gray-500 mb-4">No hay ventas registradas.</p>
-                ) : (
-                    <ul className="mb-4">
-                        {ventas.map((venta) => (
-                            <li key={venta.id} className="border p-3 rounded mb-2 flex justify-between">
-                                <div>
-                                    <p>
-                                        <strong>Código:</strong> {venta.producto?.codigo} — <strong>Vendedor:</strong> {venta.vendedor?.nombre} ({venta.vendedor?.caja})
-                                    </p>
-                                    <p>
-                                        <strong>Cantidad:</strong> {venta.cantidad} — <strong>Total:</strong> Bs. {(venta.total ?? (venta.cantidad * venta.precio_unitario - (venta.descuento || 0))).toFixed(2)}
-                                    </p>
-                                    {venta.descuento > 0 && (
-                                        <p className="text-red-600 text-sm">Descuento: -Bs. {venta.descuento} ({venta.desc_descuento})</p>
-                                    )}
-                                    <p>
-                                        <strong>Producto:</strong> {venta.producto?.nombre}
-                                    </p>
-                                </div>
-                                <div className="text-sm text-gray-600">
-                                    {new Date(venta.fecha).toLocaleString("es-ES", { timeZone: "America/La_Paz", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
-                                </div>
-                            </li>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700">Fecha fin</label>
+                    <input
+                        type="date"
+                        value={fechaFin}
+                        onChange={e => setFechaFin(e.target.value)}
+                        className="border p-2 rounded shadow-sm"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700">Categoría</label>
+                    <select
+                        value={categoriaFiltro}
+                        onChange={e => setCategoriaFiltro(e.target.value)}
+                        className="border p-2 rounded shadow-sm"
+                    >
+                        <option value="">Todas</option>
+                        {categorias.map(c => (
+                            <option key={c.id} value={c.id}>{c.nombre.toUpperCase()}</option>
                         ))}
-                    </ul>
-                )}
+                    </select>
+                </div>
+                <button
+                    onClick={resetFiltros}
+                    className="flex items-center gap-2 px-3 py-2 bg-red-400 hover:bg-red-500 text-white rounded shadow"
+                >
+                    <XCircle size={18} /> Quitar Filtros
+                </button>
+            </motion.div>
+
+            {/* Botones Exportar */}
+            {/* Botones Exportar + Paginación */}
+            <div className="flex justify-between items-center mb-6">
+                {/* Botones Exportar */}
+                <div className="flex gap-4">
+                    <button
+                        onClick={handleExportTablaActual}
+                        className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded shadow"
+                    >
+                        Exportar Tabla Actual
+                    </button>
+                    <button
+                        onClick={handleExportTodasVentas}
+                        className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded shadow"
+                    >
+                        Exportar Todas las Ventas (Año Actual)
+                    </button>
+                </div>
+
+                {/* Paginación */}
+                <div className="flex gap-2 items-center">
+                    <button
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        className="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400"
+                    >
+                        Anterior
+                    </button>
+                    <span className="px-2 py-1">
+                        {currentPage} / {totalPages}
+                    </span>
+                    <button
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        className="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400"
+                    >
+                        Siguiente
+                    </button>
+                </div>
             </div>
 
-            {/* Modal de venta */}
-            {modalAbierto && (
-                <div className="fixed inset-0 bg-black/80 flex items-center justify-center min-h-screen">
-                    <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-4xl mx-4">
-                        <h3 className="text-2xl font-bold mb-6 text-center">
-                            Registrar venta ({categoriaSeleccionada?.nombre || "TODO"})
-                        </h3>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Código */}
-                            <div>
-                                <label className="block mb-1">Código del producto</label>
-                                <input
-                                    type="text"
-                                    value={codigo}
-                                    onChange={(e) => setCodigo(e.target.value)}
-                                    className="border rounded p-2 w-full"
-                                />
-                                {producto && (
-                                    <div className="mt-3 border p-3 rounded text-sm">
-                                        <p><strong>Nombre:</strong> {producto.nombre}</p>
-                                        <p><strong>Código:</strong> {producto.codigo}</p>
-                                        <p><strong>Precio:</strong> ${producto.precio}</p>
-                                        <p><strong>Stock:</strong> {producto.stockActual}</p>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Vendedor + Fecha */}
-                            <div>
-                                <label className="block mb-1">Caja / Vendedor</label>
-                                <select
-                                    value={vendedorId}
-                                    onChange={(e) => setVendedorId(e.target.value)}
-                                    className="border rounded p-2 w-full"
-                                >
-                                    <option value="">Selecciona un vendedor</option>
-                                    {vendedores.map((v) => (
-                                        <option key={v.id} value={v.id}>
-                                            {v.caja} - {v.nombre}
-                                        </option>
-                                    ))}
-                                </select>
-
-                                <div className="mt-4">
-                                    <label className="block mb-1">Fecha de venta</label>
-                                    <input
-                                        type="datetime-local"
-                                        value={fecha}
-                                        onChange={(e) => setFecha(e.target.value)}
-                                        className="border rounded p-2 w-full"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Cantidad + Total */}
-                            <div>
-                                <label className="block mb-1">Cantidad</label>
-                                <div className="flex items-center gap-4">
-                                    <button
-                                        type="button"
-                                        onClick={() => setCantidad((prev) => Math.max(1, prev - 1))}
-                                        className="px-6 py-2 border rounded-l bg-gray-100 hover:bg-gray-200"
-                                    >
-                                        -
-                                    </button>
-                                    <input
-                                        type="number"
-                                        value={cantidad}
-                                        onChange={(e) => setCantidad(Number(e.target.value))}
-                                        className="border-t border-b p-2 w-20 text-center"
-                                        min="1"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setCantidad((prev) => prev + 1)}
-                                        className="px-6 py-2 border rounded-r bg-gray-100 hover:bg-gray-200"
-                                    >
-                                        +
-                                    </button>
-
-                                    <div className="flex flex-col">
-                                        <span className="text-gray-600 text-sm">Total</span>
-                                        <span className="font-semibold text-lg">${total.toFixed(2)}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Descuento */}
-                            <div>
-                                <button
-                                    type="button"
-                                    onClick={() => setMostrarDescuento(!mostrarDescuento)}
-                                    className="mb-3 px-4 py-2 border rounded bg-blue-100 hover:bg-blue-200 w-full"
-                                >
-                                    {mostrarDescuento ? "Ocultar descuento" : "Agregar descuento"}
-                                </button>
-
-                                {mostrarDescuento && (
-                                    <div className="p-3 border rounded bg-gray-50 space-y-3">
-                                        <div>
-                                            <label className="block text-sm mb-1">Descuento</label>
-                                            <input
-                                                type="number"
-                                                value={descuento}
-                                                onChange={(e) => setDescuento(e.target.value === "" ? "" : Number(e.target.value))}
-                                                className="border rounded p-2 w-full"
-                                                min="0"
-                                                placeholder="0"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm mb-1">Descripción</label>
-                                            <input
-                                                type="text"
-                                                value={descDescuento}
-                                                onChange={(e) => setDescDescuento(e.target.value)}
-                                                className="border rounded p-2 w-full"
-                                                placeholder="Ej: Cliente frecuente, producto dañado..."
-                                            />
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Botones */}
-                        <div className="flex justify-between mt-6">
-                            <button
-                                onClick={() => setModalAbierto(false)}
-                                className="bg-gray-400 text-white px-4 py-2 rounded"
+            {/* Tabla Ventas con altura ajustable */}
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6 }}
+                className="overflow-auto border rounded bg-white shadow"
+                style={{ maxHeight: "60vh" }} // ajustable según pantalla
+            >
+                <table className="w-full table-auto border-collapse text-left">
+                    <thead className="bg-indigo-100 sticky top-0">
+                        <tr>
+                            <th className="border p-2">Código</th>
+                            <th className="border p-2">Nombre</th>
+                            <th className="border p-2">Categoría</th>
+                            <th className="border p-2">Cantidad</th>
+                            <th className="border p-2">Precio Unitario</th>
+                            <th className="border p-2">Total</th>
+                            <th className="border p-2">Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {currentRows.map((v, idx) => (
+                            <motion.tr
+                                key={v.productos?.codigo || idx}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ duration: 0.3 }}
+                                className="hover:bg-gray-50"
                             >
-                                Cancelar
-                            </button>
-                            <button
-                                onClick={registrarVenta}
-                                className="bg-green-600 text-white px-4 py-2 rounded"
-                            >
-                                Guardar
-                            </button>
-                        </div>
+                                <td className="border p-2">{v.productos?.codigo || "-"}</td>
+                                <td className="border p-2">{v.productos?.nombre || "Sin producto"}</td>
+                                <td className="border p-2">{v.productos?.categorias?.nombre || "-"}</td>
+                                <td className="border p-2">{v.cantidad}</td>
+                                <td className="border p-2">{v.precio_unitario}</td>
+                                <td className="border p-2">{v.total}</td>
+                                <td className="border p-2">{v.fecha?.split("T")[0] || "-"}</td>
+                            </motion.tr>
+                        ))}
+                    </tbody>
+                </table>
+            </motion.div>
 
-                        {mensaje && <p className="mt-4">{mensaje}</p>}
-                    </div>
-                </div>
-            )}
+            {/* Paginación */}
+
         </div>
     );
 }
