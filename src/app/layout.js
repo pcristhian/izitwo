@@ -1,7 +1,7 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "Sistema Chidoris",
+  title: "IZI 2 ajaj",
   description: "No sabia que poner",
 };
 
