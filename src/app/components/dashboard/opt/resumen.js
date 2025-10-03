@@ -106,8 +106,8 @@ export default function Resumen({ sucursal }) {
             <div className="flex justify-center gap-4 mb-6">
                 <button
                     className={`px-4 py-2 rounded font-semibold transition-colors duration-300 ${dashboardView === "resumen"
-                            ? `bg-gradient-to-r ${theme.primary} text-white`
-                            : "bg-gray-200 text-gray-800"
+                        ? `bg-gradient-to-r ${theme.primary} text-white`
+                        : "bg-gray-200 text-gray-800"
                         }`}
                     onClick={() => setDashboardView("resumen")}
                 >
@@ -115,8 +115,8 @@ export default function Resumen({ sucursal }) {
                 </button>
                 <button
                     className={`px-4 py-2 rounded font-semibold transition-colors duration-300 ${dashboardView === "porCategoria"
-                            ? `bg-gradient-to-r ${theme.secondary} text-white`
-                            : "bg-gray-200 text-gray-800"
+                        ? `bg-gradient-to-r ${theme.secondary} text-white`
+                        : "bg-gray-200 text-gray-800"
                         }`}
                     onClick={() => setDashboardView("porCategoria")}
                 >
@@ -176,7 +176,7 @@ export default function Resumen({ sucursal }) {
                             transition={{ duration: 0.7 }}
                         >
                             <ShoppingBag size={36} className="mb-2" />
-                            <span className="text-xl font-bold">Transacciones</span>
+                            <span className="text-xl font-bold">Productos Vendidos</span>
                             <span className="mt-2 text-2xl font-extrabold">{ventas.length}</span>
                         </motion.div>
                     </motion.div>

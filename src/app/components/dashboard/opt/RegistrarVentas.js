@@ -271,9 +271,9 @@ export default function RegistrarVenta({ sucursal }) {
                                     </td>
                                 </tr>
                             ) : (
-                                ventas.map((v) => (
+                                ventas.map((v, index) => (
                                     <tr
-                                        key={v.id}
+                                        key={v.id ?? index} // usa index como último recurso si no hay id
                                         className="hover:bg-gray-50 transition"
                                     >
                                         <td className="px-4 py-2 border-b">{v.producto?.codigo}</td>
@@ -342,7 +342,7 @@ export default function RegistrarVenta({ sucursal }) {
                                     <label className="block mb-1">Vendedor</label>
                                     <select value={vendedorId} onChange={e => setVendedorId(e.target.value)} className="border rounded p-2 w-full">
                                         <option value="">Selecciona un vendedor</option>
-                                        {vendedores.map(v => <option key={v.id} value={v.id}>{v.caja} - {v.nombre}</option>)}
+                                        {vendedores.map(v => <option key={v.id} value={v.id}>{v.nombre} - {v.caja}</option>)}
                                     </select>
 
                                     <div className="mt-2">

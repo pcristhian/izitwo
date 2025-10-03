@@ -245,7 +245,8 @@ export default function ReporteVentas({ sucursal }) {
                     <tbody>
                         {currentRows.map((v, idx) => (
                             <motion.tr
-                                key={v.productos?.codigo || idx}
+                                key={`${v.productos?.codigo}-${idx}`}
+
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 transition={{ duration: 0.3 }}
