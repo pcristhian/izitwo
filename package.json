@@ -22,5 +22,9 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "tailwindcss": "^4"
+  },
+  "engines": {
+    "node": "22.x",
+    "npm": "10.x"
   }
 }
