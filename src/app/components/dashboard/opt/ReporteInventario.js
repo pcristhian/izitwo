@@ -5,7 +5,7 @@ import { supabase } from "../../../lib/supabase";
 import * as XLSX from "xlsx";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronUp, XCircle } from "lucide-react";
-import ReporteVentas from "./reporteVentas"; // Segundo tab: ventas
+import ReporteVentas from "./ReporteVentas"; // Segundo tab: ventas
 
 export default function reporteInventario({ sucursal }) {
     const [activeTab, setActiveTab] = useState("inventario"); // "inventario" | "ventas"

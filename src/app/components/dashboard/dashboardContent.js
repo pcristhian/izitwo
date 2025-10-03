@@ -1,16 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Resumen from "./opt/resumen";
-import RegistrarVentas from "./opt/registrarVentas";
-import Vendedores from "./opt/vendedores";
-import Inventarios from "./opt/inventarios";
-import ReporteInventario from "./opt/reporteInventario";
+import Resumen from "./opt/Resumen";
+import RegistrarVentas from "./opt/RegistrarVentas";
+import Vendedores from "./opt/Vendedores";
+import Inventarios from "./opt/Inventarios";
+import ReporteInventario from "./opt/ReporteInventario";
 
 import { supabase } from "../../lib/supabase";
 
 export default function DashboardContent() {
-    const [activePage, setActivePage] = useState("home");
+    const [activePage, setActivePage] = useState("Home");
     const [sucursales, setSucursales] = useState([]);
     const [sucursalSeleccionada, setSucursalSeleccionada] = useState(null);
 
@@ -43,17 +43,17 @@ export default function DashboardContent() {
 
     const renderContent = () => {
         switch (activePage) {
-            case "home":
+            case "Home":
                 return <Resumen sucursal={sucursalSeleccionada} />;
 
-            case "registrarventas":
+            case "RegistrarVentas":
                 return (
                     <RegistrarVentas
                         sucursal={sucursalSeleccionada}
                         sucursales={sucursales}
                     />
                 );
-            case "inventarios":
+            case "Inventarios":
                 return (
                     <Inventarios
                         sucursal={sucursalSeleccionada}
@@ -61,12 +61,12 @@ export default function DashboardContent() {
                     />
                 );
 
-            case "reporteinventario":
+            case "ReporteInventario":
                 return (
                     <ReporteInventario sucursal={sucursalSeleccionada} />
                 );
 
-            case "vendedores":
+            case "Vendedores":
                 return (
                     <Vendedores sucursal={sucursalSeleccionada} />
                 );
@@ -106,33 +106,33 @@ export default function DashboardContent() {
 
                 <nav className="flex flex-col space-y-3">
                     <button
-                        onClick={() => setActivePage("home")}
-                        className={`text-left px-3 py-2 rounded ${activePage === "home" ? "bg-blue-500 text-white" : "hover:bg-gray-200"}`}
+                        onClick={() => setActivePage("Home")}
+                        className={`text-left px-3 py-2 rounded ${activePage === "Home" ? "bg-blue-500 text-white" : "hover:bg-gray-200"}`}
                     >
                         Resumen
                     </button>
                     <button
-                        onClick={() => setActivePage("registrarventas")}
-                        className={`text-left px-3 py-2 rounded ${activePage === "registrarventas" ? "bg-blue-500 text-white" : "hover:bg-gray-200"}`}
+                        onClick={() => setActivePage("RegistrarVentas")}
+                        className={`text-left px-3 py-2 rounded ${activePage === "RegistrarVentas" ? "bg-blue-500 text-white" : "hover:bg-gray-200"}`}
                     >
                         Ventas
                     </button>
                     <button
-                        onClick={() => setActivePage("inventarios")}
-                        className={`text-left px-3 py-2 rounded ${activePage === "inventarios" ? "bg-blue-500 text-white" : "hover:bg-gray-200"}`}
+                        onClick={() => setActivePage("Inventarios")}
+                        className={`text-left px-3 py-2 rounded ${activePage === "Inventarios" ? "bg-blue-500 text-white" : "hover:bg-gray-200"}`}
                     >
                         Inventarios
                     </button>
                     <button
-                        onClick={() => setActivePage("reporteinventario")}
-                        className={`text-left px-3 py-2 rounded ${activePage === "reporteinventario" ? "bg-blue-500 text-white" : "hover:bg-gray-200"}`}
+                        onClick={() => setActivePage("ReporteInventario")}
+                        className={`text-left px-3 py-2 rounded ${activePage === "ReporteInventario" ? "bg-blue-500 text-white" : "hover:bg-gray-200"}`}
                     >
                         Reportes
                     </button>
 
                     <button
-                        onClick={() => setActivePage("vendedores")}
-                        className={`text-left px-3 py-2 rounded ${activePage === "vendedores" ? "bg-blue-500 text-white" : "hover:bg-gray-200"}`}
+                        onClick={() => setActivePage("Vendedores")}
+                        className={`text-left px-3 py-2 rounded ${activePage === "Vendedores" ? "bg-blue-500 text-white" : "hover:bg-gray-200"}`}
                     >
                         Cajas
                     </button>
