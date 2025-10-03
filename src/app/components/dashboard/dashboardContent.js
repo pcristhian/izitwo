@@ -5,8 +5,6 @@ import Resumen from "./opt/resumen";
 import RegistrarVentas from "./opt/registrarVentas";
 import Vendedores from "./opt/vendedores";
 import Inventarios from "./opt/inventarios";
-
-
 import ReporteInventario from "./opt/reporteInventario";
 
 import { supabase } from "../../lib/supabase";

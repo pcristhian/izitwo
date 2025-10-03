@@ -50,9 +50,24 @@ export default function LoginForm() {
                 className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md"
             >
                 <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold text-gray-800">Iniciar Sesión</h1>
-                    <p className="text-gray-600 mt-2">Ingresa tus credenciales para continuar</p>
+                    <motion.h1
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, ease: "easeOut" }}
+                        className="text-3xl font-bold text-gray-800"
+                    >
+                        Jard Complications
+                    </motion.h1>
+                    <motion.p
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2, duration: 0.6, ease: "easeOut" }}
+                        className="text-gray-600 mt-2"
+                    >
+                        Ingresa tus credenciales para continuar
+                    </motion.p>
                 </div>
+
 
                 <form onSubmit={handleSubmit} className="space-y-5">
                     <AnimatePresence>
