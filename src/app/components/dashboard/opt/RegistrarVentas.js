@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "../../../lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function RegistrarVenta({ sucursal }) {
+export default function registrarVenta({ sucursal }) {
     const [categorias, setCategorias] = useState([]);
     const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
     const [ventas, setVentas] = useState([]);

@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export default function RegistroVendedor() {
+export default function registroVendedor() {
     const [nombre, setNombre] = useState("");
     const [caja, setCaja] = useState("");
     const [vendedores, setVendedores] = useState([]);

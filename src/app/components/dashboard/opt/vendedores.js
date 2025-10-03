@@ -8,7 +8,7 @@ import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
 
-export default function Vendedores({ sucursal }) {
+export default function vendedores({ sucursal }) {
     const [vendedores, setVendedores] = useState([]);
     const [nombreFiltro, setNombreFiltro] = useState("");
     const [cajaFiltro, setCajaFiltro] = useState("");

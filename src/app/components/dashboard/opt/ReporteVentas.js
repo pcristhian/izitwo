@@ -6,7 +6,7 @@ import * as XLSX from "xlsx";
 import { motion } from "framer-motion";
 import { ChevronDown, ChevronUp, XCircle } from "lucide-react";
 
-export default function ReporteVentas({ sucursal }) {
+export default function reporteVentas({ sucursal }) {
     const [ventas, setVentas] = useState([]);
     const [categorias, setCategorias] = useState([]);
     const [categoriaFiltro, setCategoriaFiltro] = useState("");

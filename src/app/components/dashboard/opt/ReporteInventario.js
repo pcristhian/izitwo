@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronUp, XCircle } from "lucide-react";
 import ReporteVentas from "./reporteVentas"; // Segundo tab: ventas
 
-export default function ReporteInventario({ sucursal }) {
+export default function reporteInventario({ sucursal }) {
     const [activeTab, setActiveTab] = useState("inventario"); // "inventario" | "ventas"
     const [inventario, setInventario] = useState([]);
     const [categorias, setCategorias] = useState([]);

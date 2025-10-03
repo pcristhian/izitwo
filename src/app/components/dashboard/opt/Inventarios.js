@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../../lib/supabase";
 
-export default function Inventarios({ sucursal, sucursales = [] }) {
+export default function inventarios({ sucursal, sucursales = [] }) {
     const [productos, setProductos] = useState([]);
     const [categorias, setCategorias] = useState([]);
     const [categoriaFiltro, setCategoriaFiltro] = useState("");

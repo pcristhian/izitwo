@@ -6,7 +6,7 @@ import { TrendingUp, Package, ShoppingBag } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../../../lib/supabase";
 
-export default function Resumen({ sucursal }) {
+export default function resumen({ sucursal }) {
     const [ventas, setVentas] = useState([]);
     const [productos, setProductos] = useState([]);
     const [dashboardView, setDashboardView] = useState("resumen");
