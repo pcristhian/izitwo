@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Resumen from "./opt/Resumen";
-import Ventas from "./opt/RegistrarVentas";
+import RegistrarVentas from "./opt/RegistrarVentas";
 import Vendedores from "./opt/Vendedores";
 import Inventarios from "./opt/Inventarios";
 
@@ -45,25 +45,23 @@ export default function DashboardContent() {
 
     const renderContent = () => {
         switch (activePage) {
-            case "home":
+            case "Home":
                 return <Resumen sucursal={sucursalSeleccionada} />;
 
-            case "ventas":
+            case "RegistrarVentas":
                 return (
-                    <Ventas
+                    <RegistrarVentas
                         sucursal={sucursalSeleccionada}
                         sucursales={sucursales}
                     />
                 );
-            case "inventarios":
+            case "Inventarios":
                 return (
                     <Inventarios
                         sucursal={sucursalSeleccionada}
                         sucursales={sucursales}
                     />
                 );
-
-
 
             case "ReporteInventario":
                 return (
@@ -110,19 +108,19 @@ export default function DashboardContent() {
 
                 <nav className="flex flex-col space-y-3">
                     <button
-                        onClick={() => setActivePage("home")}
+                        onClick={() => setActivePage("Home")}
                         className={`text-left px-3 py-2 rounded ${activePage === "home" ? "bg-blue-500 text-white" : "hover:bg-gray-200"}`}
                     >
                         Resumen
                     </button>
                     <button
-                        onClick={() => setActivePage("ventas")}
+                        onClick={() => setActivePage("RegistrarVentas")}
                         className={`text-left px-3 py-2 rounded ${activePage === "ventas" ? "bg-blue-500 text-white" : "hover:bg-gray-200"}`}
                     >
                         Ventas
                     </button>
                     <button
-                        onClick={() => setActivePage("inventarios")}
+                        onClick={() => setActivePage("Inventarios")}
                         className={`text-left px-3 py-2 rounded ${activePage === "inventarios" ? "bg-blue-500 text-white" : "hover:bg-gray-200"}`}
                     >
                         Inventarios
