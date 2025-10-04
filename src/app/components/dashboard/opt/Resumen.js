@@ -99,7 +99,7 @@ export default function resumen({ sucursal }) {
     return (
         <div className="p-6 bg-gray-50 min-h-screen mt-0">
             <h1 className="text-3xl font-bold mb-4  text-center text-indigo-700">
-                Resumen de Ventas - {sucursal.nombre}
+                Resumen de Ventas - {sucursal?.nombre}
             </h1>
 
             {/* Botones de vista */}
