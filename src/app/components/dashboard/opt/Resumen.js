@@ -17,23 +17,23 @@ export default function resumen({ sucursal }) {
     const themes = {
         1: {
             // Sucursal 1 → Azules frescos
-            primary: "from-sky-400 to-blue-500",
-            secondary: "from-indigo-300 to-sky-400",
-            card1: "bg-sky-300",
-            card2: "bg-indigo-300",
-            card3: "bg-blue-300",
-            category: "from-sky-400 to-indigo-400",
-            chart: "#38bdf8", // sky-400
+            primary: "from-sky-600 to-sky-400",
+            secondary: "from-sky-400 to-sky-600",
+            card1: "bg-indigo-600",
+            card2: "bg-indigo-600",
+            card3: "bg-indigo-600",
+            category: "from-indigo-600 to-indigo-500",
+            chart: "#0284C7", // indigo 500
         },
         2: {
             // Sucursal 2 → Naranjas suaves
-            primary: "from-amber-400 to-orange-400",
-            secondary: "from-yellow-300 to-amber-400",
-            card1: "bg-amber-300",
-            card2: "bg-orange-300",
-            card3: "bg-yellow-300",
+            primary: "from-orange-400 to-orange-300",
+            secondary: "from-orange-300 to-orange-400",
+            card1: "bg-orange-400",
+            card2: "bg-orange-400",
+            card3: "bg-orange-400",
             category: "from-amber-400 to-orange-400",
-            chart: "#fbbf24", // amber-400
+            chart: "#ee8e2eff", // orange?
         },
     };
 
@@ -97,13 +97,13 @@ export default function resumen({ sucursal }) {
     };
 
     return (
-        <div className="p-6 bg-gray-50 min-h-screen">
-            <h1 className="text-3xl font-bold mb-6 text-center text-indigo-700">
-                Dashboard de Ventas - Resumen
+        <div className="p-6 bg-gray-50 min-h-screen mt-0">
+            <h1 className="text-3xl font-bold mb-4  text-center text-indigo-700">
+                Resumen de Ventas - {sucursal.nombre}
             </h1>
 
             {/* Botones de vista */}
-            <div className="flex justify-center gap-4 mb-6">
+            <div className="flex justify-center gap-4 mb-4">
                 <button
                     className={`px-4 py-2 rounded font-semibold transition-colors duration-300 ${dashboardView === "resumen"
                         ? `bg-gradient-to-r ${theme.primary} text-white`
@@ -133,7 +133,7 @@ export default function resumen({ sucursal }) {
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -30 }}
                         transition={{ duration: 0.4 }}
-                        className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
+                        className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4"
                     >
                         {/* Producto más vendido */}
                         <motion.div
@@ -163,7 +163,7 @@ export default function resumen({ sucursal }) {
                             <Package size={36} className="mb-2" />
                             <span className="text-xl font-bold">Total Ventas</span>
                             <span className="mt-2 text-2xl font-extrabold">
-                                {ventas.reduce((sum, v) => sum + v.total, 0)} Bs.
+                                Bs.  {ventas.reduce((sum, v) => sum + v.total, 0)}
                             </span>
                         </motion.div>
 
@@ -176,7 +176,7 @@ export default function resumen({ sucursal }) {
                             transition={{ duration: 0.7 }}
                         >
                             <ShoppingBag size={36} className="mb-2" />
-                            <span className="text-xl font-bold">Productos Vendidos</span>
+                            <span className="text-xl font-bold">Productos Vendidos Gral.</span>
                             <span className="mt-2 text-2xl font-extrabold">{ventas.length}</span>
                         </motion.div>
                     </motion.div>
@@ -200,11 +200,11 @@ export default function resumen({ sucursal }) {
                                 animate="visible"
                                 transition={{ duration: 0.5 }}
                             >
-                                <span className="font-bold text-lg">{c.categoria}</span>
+                                <span className="font-bold text-lg">{c.categoria} - (los 3 más vendidos)</span>
                                 <ul className="mt-2">
                                     {c.productos.map(([nombre, cantidad], idx) => (
                                         <li key={idx}>
-                                            {nombre} ({cantidad})
+                                            {nombre} - {cantidad} unidades
                                         </li>
                                     ))}
                                 </ul>
